@@ -1,0 +1,1 @@
+{"version":3,"file":"code.d.ts","sourceRoot":"","sources":["../../src/tools/code.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,yCAAyC,CAAC;AAEzE,OAAO,KAAK,EAAE,WAAW,EAAE,MAAM,oBAAoB,CAAC;AAMtD,MAAM,WAAW,oBAAoB;IACnC,WAAW,EAAE,WAAW,CAAC;CAC1B;AAED,wBAAgB,iBAAiB,CAC/B,MAAM,EAAE,SAAS,EACjB,IAAI,EAAE,oBAAoB,GACzB,IAAI,CA4NN"}

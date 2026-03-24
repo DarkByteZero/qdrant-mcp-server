@@ -1,0 +1,1 @@
+{"version":3,"file":"git-history.d.ts","sourceRoot":"","sources":["../../src/tools/git-history.ts"],"names":[],"mappings":"AAAA;;GAEG;AAEH,OAAO,KAAK,EAAE,SAAS,EAAE,MAAM,yCAAyC,CAAC;AAEzE,OAAO,KAAK,EAAE,iBAAiB,EAAE,MAAM,mBAAmB,CAAC;AAM3D,MAAM,WAAW,0BAA0B;IACzC,iBAAiB,EAAE,iBAAiB,CAAC;CACtC;AAED,wBAAgB,uBAAuB,CACrC,MAAM,EAAE,SAAS,EACjB,IAAI,EAAE,0BAA0B,GAC/B,IAAI,CAqPN"}

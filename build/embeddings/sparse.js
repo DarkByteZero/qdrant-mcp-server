@@ -1,0 +1,122 @@
+/**
+ * BM25 Sparse Vector Generator
+ *
+ * This module provides a simple BM25-like sparse vector generation for keyword search.
+ * Uses deterministic hash-based vocabulary indices so that the same token always maps
+ * to the same index, regardless of when or where the generator is instantiated.
+ *
+ * For production use, consider using a proper BM25 implementation or Qdrant's built-in
+ * sparse vector generation via FastEmbed.
+ */
+/**
+ * Size of the hash-based vocabulary space.
+ * Tokens are mapped to indices in [0, VOCAB_SIZE) via deterministic hashing.
+ * 30000 provides a good balance between sparsity and collision avoidance.
+ */
+const VOCAB_SIZE = 30000;
+export class BM25SparseVectorGenerator {
+    idfScores;
+    documentCount;
+    k1;
+    b;
+    constructor(k1 = 1.2, b = 0.75) {
+        this.idfScores = new Map();
+        this.documentCount = 0;
+        this.k1 = k1;
+        this.b = b;
+    }
+    /**
+     * Deterministically hash a token to a fixed vocabulary index.
+     * The same token will always produce the same index, regardless of
+     * generator instance or document processing order.
+     */
+    hashToken(token) {
+        let hash = 0;
+        for (let i = 0; i < token.length; i++) {
+            hash = ((hash << 5) - hash + token.charCodeAt(i)) | 0;
+        }
+        return Math.abs(hash) % VOCAB_SIZE;
+    }
+    /**
+     * Tokenize text into words (simple whitespace tokenization + lowercase)
+     */
+    tokenize(text) {
+        return text
+            .toLowerCase()
+            .replace(/[^\w\s]/g, " ")
+            .split(/\s+/)
+            .filter((token) => token.length > 0);
+    }
+    /**
+     * Calculate term frequency for a document
+     */
+    getTermFrequency(tokens) {
+        const tf = {};
+        for (const token of tokens) {
+            tf[token] = (tf[token] || 0) + 1;
+        }
+        return tf;
+    }
+    /**
+     * Build vocabulary from training documents (optional pre-training step)
+     * Computes IDF scores for more accurate BM25 scoring.
+     */
+    train(documents) {
+        this.documentCount = documents.length;
+        const documentFrequency = new Map();
+        // Calculate document frequency for each term
+        for (const doc of documents) {
+            const tokens = this.tokenize(doc);
+            const uniqueTokens = new Set(tokens);
+            for (const token of uniqueTokens) {
+                documentFrequency.set(token, (documentFrequency.get(token) || 0) + 1);
+            }
+        }
+        // Calculate IDF scores
+        for (const [token, df] of documentFrequency.entries()) {
+            const idf = Math.log((this.documentCount - df + 0.5) / (df + 0.5) + 1.0);
+            this.idfScores.set(token, idf);
+        }
+    }
+    /**
+     * Generate sparse vector for a query or document
+     * Returns indices and values for non-zero dimensions
+     */
+    generate(text, avgDocLength = 50) {
+        const tokens = this.tokenize(text);
+        const tf = this.getTermFrequency(tokens);
+        const docLength = tokens.length;
+        // Use a map to accumulate scores per index, handling potential hash collisions
+        const indexScores = new Map();
+        // Calculate BM25 score for each term
+        for (const [token, freq] of Object.entries(tf)) {
+            const index = this.hashToken(token);
+            // Use a default IDF if not trained
+            const idf = this.idfScores.get(token) || 1.0;
+            // BM25 formula
+            const numerator = freq * (this.k1 + 1);
+            const denominator = freq + this.k1 * (1 - this.b + this.b * (docLength / avgDocLength));
+            const score = idf * (numerator / denominator);
+            if (score > 0) {
+                // Sum scores for colliding hash indices
+                indexScores.set(index, (indexScores.get(index) || 0) + score);
+            }
+        }
+        const indices = [];
+        const values = [];
+        for (const [index, score] of indexScores.entries()) {
+            indices.push(index);
+            values.push(score);
+        }
+        return { indices, values };
+    }
+    /**
+     * Simple static method for generating sparse vectors without training
+     * Useful for quick implementation
+     */
+    static generateSimple(text) {
+        const generator = new BM25SparseVectorGenerator();
+        return generator.generate(text);
+    }
+}
+//# sourceMappingURL=sparse.js.map
